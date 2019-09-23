@@ -12,11 +12,18 @@ fi
 ################################################################################
 [[ -s "${ZDOTDIR:-$HOME}/.zprezto/.ztoken" ]] && . "${ZDOTDIR:-$HOME}/.zprezto/.ztoken"
 # VARIABLES
+export LC_ALL=en_US.UTF-8
 export PROJECT_PATH=$HOME/Projects
-export PATH=$PATH:$HOME/bin:$HOME/.config/composer/vendor/bin
+export PATH=$HOME/bin:$HOME/.config/composer/vendor/bin:$HOME/.local/bin:$PATH
+export PATH="/usr/lib/ccache/bin/:$PATH"
+# export PATH="/usr/local/opt/php@7.2/sbin:/usr/local/opt/php@7.2/bin:/usr/local/opt/mariadb@10.2/bin:$PATH"
+export PY_USER_BIN=$(python -c 'import site; print(site.USER_BASE + "/bin")')
+export PY3_USER_BIN=$(python3 -c 'import site; print(site.USER_BASE + "/bin")')
+export PATH="$PY3_USER_BIN:$PY_USER_BIN:$PATH"
 export CGR_BIN_DIR=$HOME/.config/composer/vendor/bin
-export PATH=$HOME/.local/bin:$PATH
 export POWERLINE_CONFIG_COMMAND="$HOME/.local/bin/powerline-config"
+export EDITOR="vim"
+export VISUAL="vim"
 # ssh
 export SSH_KEY_PATH="$HOME/.ssh/id_rsa"
 # Compilation flags
@@ -37,6 +44,7 @@ export PATH=$PATH:$GOVENDOR/bin:$GOCODE/bin
 # fi
 # Android
 # export ANDROID_HOME=/usr/local/opt/android-sdk
+export ANDROID_HOME=$HOME/Android/Sdk
 # Git diff highlight
 if [[ "$OSTYPE" == darwin* ]]; then
   export PATH=$PATH:$(brew --prefix git)/share/git-core/contrib/diff-highlight
@@ -54,18 +62,57 @@ export OVPN_DATA="ovpn-data"
 # Facebook PathPicker
 export FPP_EDITOR=subl
 # Ibus
-export GTK_IM_MODULE=ibus
+# export GTK_IM_MODULE=ibus
 export XMODIFIERS=@im=ibus
 export QT_IM_MODULE=ibus
+# Sound for Arch
+export ALSA_CARD=HDMI
 # # Hub
 # export PATH="/opt/hub:$PATH"
 # Gem
 # export PATH="/home/rocco/.gem/ruby/2.2.0/bin:$PATH"
-# Heroku
-export PATH="/usr/local/heroku/bin:$PATH"
+# # Heroku
+# export PATH="/usr/local/heroku/bin:$PATH"
 # export HISTCONTROL=ignoreboth
+export BROWSER="google-chrome-stable"
+# fzf
+if (( $+commands[rg] )); then
+  if (( $+commands[git] )) then
+    export FZF_DEFAULT_COMMAND='git ls-tree -r --name-only HEAD || rg --files'
+  else
+    export FZF_DEFAULT_COMMAND='rg --files'
+  fi
+  export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+fi
+export FZF_TMUX=1
+export FZF_DEFAULT_OPTS=""
+if (( $+commands[bat] )); then
+  export FZF_DEFAULT_OPTS="${FZF_DEFAULT_OPTS} --preview 'bat --line-range :100 --color \"always\" {}'"
+fi
+export CLICOLOR=1
+export LSCOLORS=ExFxBxDxCxegedabagacad
 ################################################################################
 # ALIAS
+# if (( $+commands[exa] )); then
+#   alias ls="exa --group-directories-first"
+#   alias l="ls -l"
+#   alias la="l -a"
+# fi
+if (( $+commands[bat] )); then
+  alias cat="bat --paging=never --style=plain"
+fi
+if (( $+commands[prettyping] )); then
+  alias ping="prettyping --nolegend"
+fi
+if (( $+commands[ncdu] )); then
+  alias du="ncdu --color dark -rr -x --exclude .git --exclude node_modules"
+fi
+# Update packages
+alias updpkg="updpkgsums && /bin/rm .SRCINFO && makepkg --printsrcinfo > .SRCINFO"
+# PHP
+# if (( $+commands[php70] )); then
+#   alias php="php70"
+# fi
 # Sublime
 alias st="subl"
 alias todo="st $HOME/my.todo"
@@ -73,21 +120,28 @@ alias todo="st $HOME/my.todo"
 alias lv="php artisan"
 alias a="php artisan"
 alias en="envoy run"
+# robo.li
+alias robo="robo.phar"
 # Composer
 # if (( $+commands[hhvm] )); then
 #   alias composer="hhvm -v ResourceLimit.SocketDefaultTimeout=180 -v Http.SlowQueryThreshold=180000 $(which composer)"
 # fi
-alias c="composer"
+alias c="php $(which composer)"
+alias c70="php70 $(which composer)"
+alias c71="php71 $(which composer)"
+alias c72="php72 $(which composer)"
 # Vagrant
 alias v="vagrant"
 # Symfony
 alias sf="symfony"
-alias s="php app/console"
+alias s="php bin/console"
+alias srs="s d:d:d --force && s d:d:cr && s d:s:c && s d:f:l --append && s h:f:l --append"
 # Git
 alias gfl="git flow"
-# if (( $+commands[hub] )); then
-#   eval "$(hub alias -s)"
-# fi
+if (( $+commands[hub] )); then
+  # eval "$(hub alias -s)"
+  [[ -s $HOME/Projects/govendor/src/github.com/github/hub/etc ]] && fpath=($HOME/Projects/govendor/src/github.com/github/hub/etc $fpath)
+fi
 # chmod
 alias mx='chmod a+x'
 alias 000='chmod 000'
@@ -120,12 +174,60 @@ if [[ "$OSTYPE" == darwin* ]]; then
   alias showdesktop="defaults write com.apple.finder CreateDesktop -bool true && killall Finder"
 fi
 # Magento 2
-alias magento="./bin/magento"
-alias mage="magento"
-alias m="mage"
-alias mcc="m cache:flush && m cache:clean --all && rm -rf var/cache/* && rm -rf var/generation/* && m module:status"
-alias mr="n98-magerun.phar"
-alias mr2="n98-magerun2.phar"
+alias mc="magento-cloud"
+alias magento="php bin/magento"
+alias mage="php bin/magento"
+if (( $+commands[pestle.phar] )); then
+  alias pestle="php $(which pestle.phar)"
+  alias mp="pestle"
+fi
+alias mrf="redis-cli flushall"
+alias mcg="php $(which mg2-codegen.phar)"
+if (( $+commands[n98-magerun.phar] )); then
+  alias mr="php $(which n98-magerun.phar)"
+fi
+if (( $+commands[n98-magerun2.phar] )); then
+  alias mr2="php $(which n98-magerun2.phar)"
+fi
+alias m="mr2"
+function deleteFolders () {
+  for folder in $1; do
+    if [ -d "$(pwd)/$folder" ]; then
+      /usr/bin/rm -rf "$(pwd)/$folder/"
+    fi
+  done
+}
+function deleteInsideFolders () {
+  for folder in $1; do
+    if [[ -n "$(pwd)/$folder/"*(#qN) ]]; then
+      /usr/bin/rm -rf "$(pwd)/$folder/"*
+    fi
+  done
+}
+function mcc () {
+  local folders=(var/di)
+  local folderGlobs=(var/generation generated/code generated/metadata var/cache var/page_cache var/session)
+  deleteFolders folders
+  deleteInsideFolders folderGlobs
+  m c:f
+}
+function mcf () {
+  local folderGlobs=(pub/static var/view_preprocessed)
+  deleteInsideFolders folderGlobs
+  m c:f
+}
+function mccf () {
+  local folders=(var/di)
+  local folderGlobs=(var/generation generated/code generated/metadata var/cache var/page_cache var/session pub/static var/view_preprocessed)
+  deleteFolders folders
+  deleteInsideFolders folderGlobs
+  m c:f
+}
+alias mccfu="mccf && m setup:upgrade"
+alias mcu="mrf && mcc && m setup:upgrade"
+alias q="q -O -H"
+alias qp="q -d '|'"
+alias fp="find . -type d -exec chmod u+rwx,g+rwx,o+rx {} \; && find . -type f -exec chmod u+rw,g+rw,o+r {} \;"
 function mr_base () {
   mr config:set web/unsecure/base_url "http://$1/";
   mr config:set web/secure/base_url "https://$1/";
@@ -134,42 +236,159 @@ function mr_base_same () {
   mr config:set web/unsecure/base_url "$1";
   mr config:set web/secure/base_url "$1";
 }
+function xdebug () {
+  case $1 in
+    on)
+      # if (( $+commands[php70] )); then
+      #   if [[ -f /etc/php70/conf.d/xdebug.ini.deactivated ]] then
+      #     sudo mv /etc/php70/conf.d/xdebug.ini.deactivated /etc/php70/conf.d/xdebug.ini
+      #     sudo systemctl restart php70-fpm
+      #   fi
+      # fi
+      # if (( $+commands[php71] )); then
+      #   if [[ -f /etc/php71/conf.d/xdebug.ini.deactivated ]] then
+      #     sudo mv /etc/php71/conf.d/xdebug.ini.deactivated /etc/php71/conf.d/xdebug.ini
+      #     sudo systemctl restart php71-fpm
+      #   fi
+      # fi
+      # if (( $+commands[php72] )); then
+      #   if [[ -f /etc/php72/conf.d/xdebug.ini.deactivated ]] then
+      #     sudo mv /etc/php72/conf.d/xdebug.ini.deactivated /etc/php72/conf.d/xdebug.ini
+      #     sudo systemctl restart php72-fpm
+      #   fi
+      # fi
+      # if (( $+commands[php] )); then
+      #   if [[ -f /etc/php/conf.d/xdebug.ini.deactivated ]] then
+      #     sudo mv /etc/php/conf.d/xdebug.ini.deactivated /etc/php/conf.d/xdebug.ini
+      #     sudo systemctl restart php-fpm
+      #   fi
+      # fi
+      if [[ -f /usr/local/etc/php/7.2/conf.d/ext-xdebug.ini.deactivated ]] then
+        mv /usr/local/etc/php/7.2/conf.d/ext-xdebug.ini.deactivated /usr/local/etc/php/7.2/conf.d/ext-xdebug.ini
+        brew services restart php@7.2
+      fi
+      export XDEBUG_CONFIG="idekey=PHPSTORM"
+    ;;
+    off)
+      # if (( $+commands[php70] )); then
+      #   if [[ -f /etc/php70/conf.d/xdebug.ini ]] then
+      #     sudo mv /etc/php70/conf.d/xdebug.ini /etc/php70/conf.d/xdebug.ini.deactivated
+      #     sudo systemctl restart php70-fpm
+      #   fi
+      # fi
+      # if (( $+commands[php71] )); then
+      #   if [[ -f /etc/php71/conf.d/xdebug.ini ]] then
+      #     sudo mv /etc/php71/conf.d/xdebug.ini /etc/php71/conf.d/xdebug.ini.deactivated
+      #     sudo systemctl restart php71-fpm
+      #   fi
+      # fi
+      # if (( $+commands[php72] )); then
+      #   if [[ -f /etc/php72/conf.d/xdebug.ini ]] then
+      #     sudo mv /etc/php72/conf.d/xdebug.ini /etc/php72/conf.d/xdebug.ini.deactivated
+      #     sudo systemctl restart php72-fpm
+      #   fi
+      # fi
+      # if (( $+commands[php] )); then
+      #   if [[ -f /etc/php/conf.d/xdebug.ini ]] then
+      #     sudo mv /etc/php/conf.d/xdebug.ini /etc/php/conf.d/xdebug.ini.deactivated
+      #     sudo systemctl restart php-fpm
+      #   fi
+      # fi
+      if [[ -f /usr/local/etc/php/7.2/conf.d/ext-xdebug.ini ]] then
+        mv /usr/local/etc/php/7.2/conf.d/ext-xdebug.ini /usr/local/etc/php/7.2/conf.d/ext-xdebug.ini.deactivated
+        brew services restart php@7.2
+      fi
+      unset XDEBUG_CONFIG
+    ;;
+    *)
+      echo "Usage: xdebug on|off"
+    ;;
+  esac
+}
+function phps () {
+  case $1 in
+    70)
+      ln -sf /usr/bin/php70 "$HOME/bin/php" && rehash
+    ;;
+    71)
+      ln -sf /usr/bin/php71 "$HOME/bin/php" && rehash
+    ;;
+    72)
+      ln -sf /usr/bin/php72 "$HOME/bin/php" && rehash
+    ;;
+    off)
+      [ -f "$HOME/bin/php" ] && unlink "$HOME/bin/php" && rehash
+    ;;
+    *)
+      echo "Alias php70/php71 to php"
+      echo "Usage: phps 70|71"
+    ;;
+  esac
+}
 # Tmux
 alias tmux="tmux -2"
 # npm_lazy
 alias lnpm="npm --registry http://localhost:4873/"
 # ag
-alias ag='ag --path-to-agignore=~/.agignore'
+alias ag='ag --path-to-ignore ~/.agignore'
+# Anybar
+function anybar { echo -n $1 | nc -4u -w0 localhost ${2:-1738}; }
+# Xdebug
+alias xy='export XDEBUG_CONFIG="remote_enable=1 remote_mode=req remote_port=9000 remote_host=127.0.0.1 remote_connect_back=0"'
+alias xn='unset XDEBUG_CONFIG'
+# howdoi
+alias h='function hdi(){ howdoi $* -c -n 5; }; hdi'
+# yii
+function y {
+  if [[ -s ./yiic ]] then
+    ./yiic "$@"
+  elif [[ -s ./protected/yiic ]]; then
+    ./protected/yiic "$@"
+  else
+    echo "Yii not found"
+    return 1
+  fi
+  return 0
+}
+alias ports="sudo lsof -iTCP -s TCP:LISTEN -P -n"
 ################################################################################
 # LIBRARY
 # MeRC
 [[ -s $HOME/.merc ]] && . $HOME/.merc
 # rvm
-# if [[ -s $HOME/.rvm/scripts/rvm ]]; then
-  # . $HOME/.rvm/scripts/rvm
-  # export PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
-# fi
+if [[ -s $HOME/.rvm/scripts/rvm ]]; then
+  . $HOME/.rvm/scripts/rvm
+  export PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
+fi
 # Mark
 # [[ -s $HOME/.mark.sh ]] && . $HOME/.mark.sh
 # Perlbrew
 # [[ -s $HOME/perl5/perlbrew/etc/bashrc ]] && . $HOME/perl5/perlbrew/etc/bashrc
 # Wordpress
 [[ -s $HOME/wp-completion.bash ]] && . $HOME/wp-completion.bash
-# NVM
-export NVM_DIR="${HOME}/.nvm"
-[ -s "$NVM_DIR/nvm.sh"  ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
+# # NVM
+# export NVM_DIR="${HOME}/.nvm"
+# [ -s "$NVM_DIR/nvm.sh"  ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
+export NVM_DIR="$HOME/.nvm"
+[ -s "/usr/local/opt/nvm/nvm.sh" ] && . "/usr/local/opt/nvm/nvm.sh"  # This loads nvm
+[ -s "/usr/local/opt/nvm/etc/bash_completion" ] && . "/usr/local/opt/nvm/etc/bash_completion"  # This loads nvm bash_completion
+# export PATH="$(yarn global bin):$PATH"
 
-# PyEnv
-export PATH="$HOME/.pyenv/bin:$PATH"
-if (( $+commands[pyenv] )); then
-  eval "$(pyenv init -)"
-  eval "$(pyenv virtualenv-init -)"
-fi
+# # PyEnv
+# # export PATH="${HOME}/.local/bin:$PATH"
+# export PYENV_ROOT="$HOME/.pyenv"
+# export PATH="$PYENV_ROOT/bin:$PATH"
+# export PYTHON_CONFIGURE_OPTS="--enable-shared"
+# if (( $+commands[pyenv] )); then
+#   eval "$(pyenv init -)"
+#   eval "$(pyenv virtualenv-init -)"
+# fi
 
-# phpbrew
-export PHPBREW_RC_DISABLE=1
-[[ -s $HOME/.phpbrew/bashrc ]] && export PHPBREW_RC_DISABLE=1 && . $HOME/.phpbrew/bashrc
+# # phpbrew
+# export PHPBREW_RC_DISABLE=1
+# [[ -s $HOME/.phpbrew/bashrc ]] && export PHPBREW_RC_DISABLE=1 && . $HOME/.phpbrew/bashrc
 # export PHPBREW_SET_PROMPT=1
+
 ###-begin-pm2-completion-###
 ### credits to npm for the completion file model
 #
@@ -213,10 +432,61 @@ fi
 
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 
-transfer() { if [ $# -eq 0 ]; then echo "No arguments specified. Usage:\necho transfer /tmp/test.md\ncat /tmp/test.md | transfer test.md"; return 1; fi
-tmpfile=$( mktemp -t transferXXX ); if tty -s; then basefile=$(basename "$1" | sed -e 's/[^a-zA-Z0-9._-]/-/g'); curl --progress-bar --upload-file "$1" "https://transfer.sh/$basefile" >> $tmpfile; else curl --progress-bar --upload-file "-" "https://transfer.sh/$1" >> $tmpfile ; fi; cat $tmpfile; rm -f $tmpfile; }
+transfer() {
+  if [ $# -eq 0 ]; then
+    echo "No arguments specified. Usage:\necho transfer /tmp/test.md\ncat /tmp/test.md | transfer test.md";
+    return 1;
+  fi
+  tmpfile=$( mktemp -t transferXXX );
+  if tty -s; then
+    basefile=$(basename "$1" | sed -e 's/[^a-zA-Z0-9._-]/-/g');
+    curl --progress-bar --upload-file "$1" "https://transfer.sh/$basefile" >> $tmpfile;
+  else
+    curl --progress-bar --upload-file "-" "https://transfer.sh/$1" >> $tmpfile;
+  fi;
+  echo "" >> $tmpfile;
+  cat $tmpfile;
+  rm -f $tmpfile;
+}
 
-test -e "$PROJECT_PATH/github/supercrabtree/k/k.sh" && source "$PROJECT_PATH/github/supercrabtree/k/k.sh"
+test -e "$HOME/k/k.sh" && source "$HOME/k/k.sh"
 alias ka="k -Ah --no-vcs"
 
+test -e "$(brew --prefix asdf)/asdf.sh" && source "$(brew --prefix asdf)/asdf.sh"
+test -e "$(brew --prefix asdf)/asdf.sh" && asdf reshim python
+test -e "$(brew --prefix asdf)/completions/asdf.bash" && source "$(brew --prefix asdf)/completions/asdf.bash"
 test -e "$PROJECT_PATH/github/fcambus/ansiweather/ansiweather.plugin.zsh" && source "$PROJECT_PATH/github/fcambus/ansiweather/ansiweather.plugin.zsh"
+# test -e "$(brew --prefix asdf)/asdf.sh" && source "$(brew --prefix asdf)/asdf.sh"
+# test -e "$(brew --prefix asdf)/asdf.sh" && asdf reshim python
+# test -e "$(brew --prefix asdf)/completions/asdf.bash" && source "$(brew --prefix asdf)/completions/asdf.bash"
+
+# # zsh-nvm
+# [[ -s "${HOME}/.zsh-nvm/zsh-nvm.plugin.zsh" ]] && . "${HOME}/.zsh-nvm/zsh-nvm.plugin.zsh"
+# [[ -s "${HOME}/.zsh-better-npm-completion/zsh-better-npm-completion.plugin.zsh" ]] && . "${HOME}/.zsh-better-npm-completion/zsh-better-npm-completion.plugin.zsh"
+# luarocks
+if (( $+commands[luarocks] )); then
+  # eval $(luarocks path --bin)
+  export PATH=$PATH:$HOME/.luarocks/bin
+fi
+
+# FZF
+# --files: List files that would be searched but do not search
+# --no-ignore: Do not respect .gitignore, etc...
+# --hidden: Search hidden files and folders
+# --follow: Follow symlinks
+# --glob: Additional conditions for search (in this case ignore everything in the .git/ folder)
+export FZF_DEFAULT_COMMAND='rg --files --no-ignore --hidden --follow --glob "!.git/*"'
+# deployer
+# [[ -s $HOME/.deployer_completion ]] && source $HOME/.deployer_completion
+# Tilix
+if [ $TILIX_ID ] || [ $VTE_VERSION ]; then
+    source /etc/profile.d/vte.sh
+fi
+ulimit -S -n 20480
+# if which ruby >/dev/null && which gem >/dev/null; then
+#   PATH="$(ruby -r rubygems -e 'puts Gem.user_dir')/bin:$PATH"
+# fi
+# BEGIN SNIPPET: Magento Cloud CLI configuration
+export PATH="$HOME/"'.magento-cloud/bin':"$PATH"
+if [ -f "$HOME/"'.magento-cloud/shell-config.rc' ]; then . "$HOME/"'.magento-cloud/shell-config.rc'; fi
+# END SNIPPET
